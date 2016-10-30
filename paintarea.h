@@ -32,6 +32,7 @@ private:
     QColor beginColor;  // 渐变起点的颜色
     QColor endColor;    // 渐变终点的颜色
 
+    bool isDrawing; // 用于双重缓冲，判断是否正在绘制
 };
 
 #endif // PAINTAREA_H

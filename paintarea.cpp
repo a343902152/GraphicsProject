@@ -6,9 +6,12 @@ PaintArea::PaintArea()
 
     backColor = qRgb(255,255,255);    //画布初始化背景色使用白色
     curImage.fill(backColor);//对画布进行填充
+    tempImage=curImage;  // tmp画布是cur画布的复制
 
     beginColor=Qt::red;
     endColor=Qt::green;
+
+    isDrawing=false;
 }
 
 /**
@@ -20,7 +23,12 @@ void PaintArea::paintEvent(QPaintEvent *)
     QPainter painter(this);
 
 
-    painter.drawImage(0,0,curImage);
+    if(isDrawing){
+        painter.drawImage(0,0,tempImage);
+    }else{
+        painter.drawImage(0,0,curImage);
+    }
+
 }
 
 /**
@@ -143,7 +151,7 @@ void PaintArea::drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,
             if(d>0){
                 // 受QT坐标轴影响，原有的y-=1转变成y+=1
                 curPoint.setY(curPoint.y()+1);
-                d-=(1-k);
+                d-=(1+k);
             }else{
                 d-=k;
             }
@@ -190,6 +198,7 @@ void PaintArea::mousePressEvent(QMouseEvent *event)//只区分是拖动还是绘
 {
     if(event->button() == Qt::LeftButton)  //当鼠标左键按下
     {
+        isDrawing=true;
         beginPoint = event->pos();   //获得鼠标指针的当前坐标作为起始坐标
 
         //当前点击位置的横纵坐标
@@ -208,6 +217,11 @@ void PaintArea::mouseMoveEvent(QMouseEvent *event)
         endPoint = event->pos();  //获得鼠标指针的当前坐标作为终止坐标
         int x=endPoint.x();
         int y=endPoint.y();
+
+        if(isDrawing){
+            tempImage=curImage;
+            drawLine(tempImage,beginPoint,endPoint,beginColor,endColor);
+        }
     }
 }
 
@@ -216,9 +230,11 @@ void PaintArea::mouseReleaseEvent(QMouseEvent *event)
 {
    if(event->button() == Qt::LeftButton)   //如果鼠标左键释放
    {
+       isDrawing=false;
        endPoint = event->pos();
        int x=endPoint.x();
        int y=endPoint.y();
+
        drawLine(curImage,beginPoint,endPoint,beginColor,endColor);
    }
 

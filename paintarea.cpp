@@ -55,15 +55,9 @@ void PaintArea::drawPoint(QImage &image,QPoint point,QColor color){
  */
 void PaintArea::drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,
                         QColor beginColor,QColor endColor){
-    double offsetRed=(endColor.red()-beginColor.red())*1.0/(endPoint.x()-beginPoint.x());
-    double offsetGreen=(endColor.green()-beginColor.green())*1.0/(endPoint.x()-beginPoint.x());
-    double offsetBlue=(endColor.blue()-beginColor.blue())*1.0/(endPoint.x()-beginPoint.x());
-    QColor curColor=beginColor;
-
-
     cout<<"drawLine"<<endl;
+    QColor curColor=beginColor;
     QPoint curPoint;
-
 
     // k要乘以-1是因为QT坐标轴中y轴向下为正
     double k=-(endPoint.y()-beginPoint.y())*1.0/(endPoint.x()-beginPoint.x());
@@ -76,7 +70,14 @@ void PaintArea::drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,
             QPoint t=beginPoint;
             beginPoint=endPoint;
             endPoint=t;
+
+            QColor tc=beginColor;
+            beginColor=endColor;
+            endColor=tc;
         }
+        double offsetRed=(endColor.red()-beginColor.red())*1.0/(endPoint.x()-beginPoint.x());
+        double offsetGreen=(endColor.green()-beginColor.green())*1.0/(endPoint.x()-beginPoint.x());
+        double offsetBlue=(endColor.blue()-beginColor.blue())*1.0/(endPoint.x()-beginPoint.x());
         d=0.5-k;
         for(curPoint=beginPoint;curPoint.x()<endPoint.x();curPoint.setX(curPoint.x()+1)){
             curColor=qRgb((int)beginColor.red()+(offsetRed*colorCount),
@@ -89,6 +90,91 @@ void PaintArea::drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,
                 d+=(1-k);
             }else{
                 d-=k;
+            }
+        }
+    }else if(k>1){
+        // 受QT坐标系影响，y轴大于小于号相反
+        if(beginPoint.y()<endPoint.y()){
+            QPoint t=beginPoint;
+            beginPoint=endPoint;
+            endPoint=t;
+
+            QColor tc=beginColor;
+            beginColor=endColor;
+            endColor=tc;
+        }
+        double offsetRed=(endColor.red()-beginColor.red())*1.0/(beginPoint.y()-endPoint.y());
+        double offsetGreen=(endColor.green()-beginColor.green())*1.0/(beginPoint.y()-endPoint.y());
+        double offsetBlue=(endColor.blue()-beginColor.blue())*1.0/(beginPoint.y()-endPoint.y());
+        d=1-0.5*k;
+
+        // 受QT坐标轴影响，大小与符号相反，原有的y+=1转变成y-=1
+        for(curPoint=beginPoint;curPoint.y()>endPoint.y();curPoint.setY(curPoint.y()-1)){
+            curColor=qRgb((int)beginColor.red()+(offsetRed*colorCount),
+                          (int)beginColor.green()+(offsetGreen*colorCount++),
+                          (int)beginColor.blue()+(offsetBlue*colorCount));
+            drawPoint(image,curPoint,curColor);
+            if(d>=0){
+                curPoint.setX(curPoint.x()+1);
+                d+=(1-k);
+            }else{
+                d+=1;
+            }
+        }
+    }else if(k>=-1&&k<0){
+        if(beginPoint.x()>endPoint.x()){
+            QPoint t=beginPoint;
+            beginPoint=endPoint;
+            endPoint=t;
+
+            QColor tc=beginColor;
+            beginColor=endColor;
+            endColor=tc;
+        }
+        double offsetRed=(endColor.red()-beginColor.red())*1.0/(endPoint.x()-beginPoint.x());
+        double offsetGreen=(endColor.green()-beginColor.green())*1.0/(endPoint.x()-beginPoint.x());
+        double offsetBlue=(endColor.blue()-beginColor.blue())*1.0/(endPoint.x()-beginPoint.x());
+        d=-0.5-k;
+        for(curPoint=beginPoint;curPoint.x()<endPoint.x();curPoint.setX(curPoint.x()+1)){
+            curColor=qRgb((int)beginColor.red()+(offsetRed*colorCount),
+                          (int)beginColor.green()+(offsetGreen*colorCount++),
+                          (int)beginColor.blue()+(offsetBlue*colorCount));
+            drawPoint(image,curPoint,curColor);
+            if(d>0){
+                // 受QT坐标轴影响，原有的y-=1转变成y+=1
+                curPoint.setY(curPoint.y()+1);
+                d-=(1-k);
+            }else{
+                d-=k;
+            }
+        }
+    }else{
+        // 受QT坐标系影响，y轴大于小于号相反
+        if(beginPoint.y()>endPoint.y()){
+            QPoint t=beginPoint;
+            beginPoint=endPoint;
+            endPoint=t;
+
+            QColor tc=beginColor;
+            beginColor=endColor;
+            endColor=tc;
+        }
+        double offsetRed=(endColor.red()-beginColor.red())*1.0/(endPoint.y()-beginPoint.y());
+        double offsetGreen=(endColor.green()-beginColor.green())*1.0/(endPoint.y()-beginPoint.y());
+        double offsetBlue=(endColor.blue()-beginColor.blue())*1.0/(endPoint.y()-beginPoint.y());
+        d=-1-0.5*k;
+
+        // 受QT坐标轴影响，大小与符号相反，原有的y+=1转变成y-=1
+        for(curPoint=beginPoint;curPoint.y()<endPoint.y();curPoint.setY(curPoint.y()+1)){
+            curColor=qRgb((int)beginColor.red()+(offsetRed*colorCount),
+                          (int)beginColor.green()+(offsetGreen*colorCount++),
+                          (int)beginColor.blue()+(offsetBlue*colorCount));
+            drawPoint(image,curPoint,curColor);
+            if(d<0){
+                curPoint.setX(curPoint.x()+1);
+                d-=(1+k);
+            }else{
+                d-=1;
             }
         }
     }

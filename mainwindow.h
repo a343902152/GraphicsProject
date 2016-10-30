@@ -6,6 +6,7 @@
 #include <iostream>
 #include "paintarea.h"
 
+
 namespace Ui {
 class MainWindow;
 }

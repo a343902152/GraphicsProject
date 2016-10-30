@@ -14,9 +14,11 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    paintarea.cpp
+    paintarea.cpp \
+    mypoint2.cpp
 
 HEADERS  += mainwindow.h \
-    paintarea.h
+    paintarea.h \
+    mypoint2.h
 
 FORMS    += mainwindow.ui

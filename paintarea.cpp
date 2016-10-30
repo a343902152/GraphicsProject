@@ -2,7 +2,7 @@
 
 PaintArea::PaintArea()
 {
-    curImage = QImage(400,300,QImage::Format_RGB32);  //画布的初始化大小设为400*300，使用32位颜色
+    curImage = QImage(600,400,QImage::Format_RGB32);  //画布的初始化大小设为400*300，使用32位颜色
 
     backColor = qRgb(255,255,255);    //画布初始化背景色使用白色
     curImage.fill(backColor);//对画布进行填充
@@ -239,6 +239,15 @@ void PaintArea::mouseReleaseEvent(QMouseEvent *event)
    }
 
 }
+
+void PaintArea::setBeginColor(QColor color){
+    this->beginColor=color;
+}
+
+void PaintArea::setEndColor(QColor color){
+    this->endColor=color;
+}
+
 PaintArea::~PaintArea()
 {
 

@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QScrollArea>
 #include <iostream>
+#include<QtGui>
+#include<QColorDialog>
 #include "paintarea.h"
 
 
@@ -18,6 +20,11 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+private slots:
+    void on_btn_begincolor_clicked();
+
+    void on_btn_endcolor_clicked();
 
 private:
     Ui::MainWindow *ui;

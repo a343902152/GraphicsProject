@@ -13,6 +13,8 @@ class PaintArea : public QWidget
 {
 public:
     PaintArea();
+    void setBeginColor(QColor color);
+    void setEndColor(QColor color);
     ~PaintArea();
 
 protected:
@@ -23,7 +25,7 @@ protected:
 
     void drawPoint(QImage &image,QPoint point,QColor color);
     void drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,QColor beginColor,QColor endColor);
-private:
+public:
     QImage curImage;    //QImage类对象，用于在其上绘图
     QImage tempImage; //临时画布
 

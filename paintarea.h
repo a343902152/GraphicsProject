@@ -25,6 +25,8 @@ protected:
 
     void drawPoint(QImage &image,QPoint point,QColor color);
     void drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,QColor beginColor,QColor endColor);
+
+    void drawBEPoint(QImage &image,QPoint beginPoint,QPoint endPoint);  // 绘制起点、重点及相应说明
 public:
     QImage curImage;    //QImage类对象，用于在其上绘图
     QImage tempImage; //临时画布

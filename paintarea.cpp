@@ -220,11 +220,31 @@ void PaintArea::mouseMoveEvent(QMouseEvent *event)
 
         if(isDrawing){
             tempImage=curImage;
+            drawBEPoint(tempImage,beginPoint,endPoint);
             drawLine(tempImage,beginPoint,endPoint,beginColor,endColor);
         }
     }
 }
 
+
+void PaintArea::drawBEPoint(QImage &image, QPoint beginPoint, QPoint endPoint){
+    QPainter painter(&image);
+
+    QPen pen;
+    pen.setColor(Qt::red);
+    pen.setWidth(5);
+
+    painter.setPen(pen);
+    painter.drawPoint(beginPoint);
+    painter.drawPoint(endPoint);
+
+    pen.setColor(Qt::black);
+    pen.setWidth(3);
+    painter.setPen(pen);
+    painter.drawText(beginPoint,"("+QString::number(beginPoint.x())+","+QString::number(beginPoint.y())+")");
+    painter.drawText(endPoint,"("+QString::number(endPoint.x())+","+QString::number(endPoint.y())+")");
+
+}
 
 void PaintArea::mouseReleaseEvent(QMouseEvent *event)
 {

@@ -6,6 +6,8 @@
 #include <iostream>
 #include<QtGui>
 #include<QColorDialog>
+
+#include<queue>
 #include "paintarea.h"
 
 
@@ -19,6 +21,7 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = 0);
+    void paintEvent(QPaintEvent *);   //重绘事件
     ~MainWindow();
 
 private slots:

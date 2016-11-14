@@ -28,6 +28,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->textBrowser_endcolor->setPalette(palette);
 }
 
+void MainWindow::paintEvent(QPaintEvent *){
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;

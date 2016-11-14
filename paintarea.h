@@ -7,6 +7,8 @@
 #include <QWidget>
 #include<QtGui>
 #include<QPaintEvent>
+#include<queue>
+#include<cstring>
 using namespace std;
 
 class PaintArea : public QWidget
@@ -25,6 +27,7 @@ protected:
 
     void drawPoint(QImage &image,QPoint point,QColor color);
     void drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,QColor beginColor,QColor endColor);
+    void fillPolygon(QImage &image,QPoint beginPoint,QColor newColor);
 
     void drawBEPoint(QImage &image,QPoint beginPoint,QPoint endPoint);  // 绘制起点、重点及相应说明
 public:
@@ -36,7 +39,11 @@ public:
     QColor beginColor;  // 渐变起点的颜色
     QColor endColor;    // 渐变终点的颜色
 
+    string actionType;
     bool isDrawing; // 用于双重缓冲，判断是否正在绘制
+
+    int width;
+    int height;
 };
 
 #endif // PAINTAREA_H

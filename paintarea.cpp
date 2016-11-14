@@ -2,16 +2,20 @@
 
 PaintArea::PaintArea()
 {
-    curImage = QImage(600,400,QImage::Format_RGB32);  //画布的初始化大小设为400*300，使用32位颜色
+    width=300;
+    height=200;
+    curImage = QImage(width,height,QImage::Format_RGB32);  //画布的初始化大小设为400*300，使用32位颜色
 
     backColor = qRgb(255,255,255);    //画布初始化背景色使用白色
     curImage.fill(backColor);//对画布进行填充
     tempImage=curImage;  // tmp画布是cur画布的复制
 
     beginColor=Qt::red;
-    endColor=Qt::green;
+    endColor=Qt::blue;
 
     isDrawing=false;
+
+    actionType="fillPolygon";
 }
 
 /**
@@ -22,13 +26,14 @@ void PaintArea::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
 
+    cout<<"paintenven"<<endl;
+    painter.drawImage(0,0,curImage);
 
-    if(isDrawing){
-        painter.drawImage(0,0,tempImage);
-    }else{
-        painter.drawImage(0,0,curImage);
-    }
-
+//    if(isDrawing){
+//        painter.drawImage(0,0,tempImage);
+//    }else{
+//        painter.drawImage(0,0,curImage);
+//    }
 }
 
 /**
@@ -40,17 +45,16 @@ void PaintArea::paintEvent(QPaintEvent *)
  * @param point
  */
 void PaintArea::drawPoint(QImage &image,QPoint point,QColor color){
-//    cout<<"drawPoint x="<<point.x()<<",y="<<point.y()<<endl;
     QPainter painter(&image);   //在theImage上绘图
-
+//    cout<<"drawPoint"<<point.x()<<","<<point.y()<<endl;
     QPen pen;
     pen.setColor(color);
     pen.setStyle(Qt::SolidLine);
-    pen.setWidth(2);
+    pen.setWidth(1);
 
     painter.setPen(pen);
     painter.drawPoint(point);
-    update();   //进行更新界面显示，可引起窗口重绘事件，重绘窗口
+    repaint();   //进行更新界面显示，可引起窗口重绘事件，重绘窗口
 }
 
 /**
@@ -188,6 +192,57 @@ void PaintArea::drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,
     }
 }
 
+/**
+ * 填充多边形的算法
+ * 首先设置一个填充颜色，然后以当前坐标点的bgcolor为底色，以其他颜色为边界。
+ * @brief PaintArea::fillPolygon
+ * @param image
+ * @param beginPoint
+ * @param newColor
+ */
+void PaintArea::fillPolygon(QImage &image, QPoint beginPoint, QColor newColor){
+    QColor backgroundColor=image.pixel(beginPoint);
+    cout<<"fill"<<endl;
+
+    queue<QPoint> pointQueue;
+    if(newColor!=backgroundColor){
+        pointQueue.push(beginPoint);
+    }
+    int count=0;
+    int vis[width+5][height+5];
+    memset(vis,0,sizeof(vis));
+
+    int dir[4][2]={{1,0}, {-1,0} ,{0,1}, {0,-1}};
+    while(!pointQueue.empty()){
+        count++;
+
+        QPoint curPoint=pointQueue.front();
+        pointQueue.pop();
+        drawPoint(image,curPoint,newColor);
+
+        int x=curPoint.x();
+        int y=curPoint.y();
+        int tx=x;
+        int ty=y;
+
+        // fixme: 某个点还未drawpoint，但是其颜色已经提前变成目标颜色，导致新的点不能加到队列中去
+        for(int i=0;i<4;i++){
+            tx=x+dir[i][0];
+            ty=y+dir[i][1];
+//            cout<<tx<<","<<ty<<endl;
+            if(tx>=0 && tx<width && ty>=0 && ty <height&&!vis[tx][ty]){
+                // 不管要不要填充，都设置为vis
+                vis[tx][ty]=1;
+                QPoint newPoint(tx,ty);
+                QColor tmpColor=(QColor)(image.pixel(newPoint));
+                if(tmpColor==backgroundColor){
+//                    cout<<"push"<<tx<<","<<ty<<endl;
+                    pointQueue.push(newPoint);
+                }
+            }
+        }
+    }
+}
 
 /**
  * 每当鼠标点击(不是松开)时会调用
@@ -204,10 +259,7 @@ void PaintArea::mousePressEvent(QMouseEvent *event)//只区分是拖动还是绘
         //当前点击位置的横纵坐标
         int x=beginPoint.x();
         int y=beginPoint.y();
-//        drawPoint(curImage,beginPoint);
-
     }
-
 }
 
 void PaintArea::mouseMoveEvent(QMouseEvent *event)
@@ -219,14 +271,44 @@ void PaintArea::mouseMoveEvent(QMouseEvent *event)
         int y=endPoint.y();
 
         if(isDrawing){
-            tempImage=curImage;
-            drawBEPoint(tempImage,beginPoint,endPoint);
-            drawLine(tempImage,beginPoint,endPoint,beginColor,endColor);
+            tempImage=curImage;            
+            if(actionType=="temp"){
+
+            }else{
+                drawBEPoint(tempImage,beginPoint,endPoint);
+                drawLine(tempImage,beginPoint,endPoint,beginColor,endColor);
+            }
         }
     }
 }
 
 
+void PaintArea::mouseReleaseEvent(QMouseEvent *event)
+{
+   if(event->button() == Qt::LeftButton)   //如果鼠标左键释放
+   {
+       isDrawing=false;
+       endPoint = event->pos();
+       int x=endPoint.x();
+       int y=endPoint.y();
+
+       if(actionType=="fillPolygon"){
+           fillPolygon(curImage,beginPoint,endColor);
+       }else{
+           drawLine(curImage,beginPoint,endPoint,beginColor,endColor);
+       }
+   }
+
+}
+
+
+/**
+  绘制起点和终点的坐标
+ * @brief PaintArea::drawBEPoint
+ * @param image
+ * @param beginPoint
+ * @param endPoint
+ */
 void PaintArea::drawBEPoint(QImage &image, QPoint beginPoint, QPoint endPoint){
     QPainter painter(&image);
 
@@ -243,21 +325,6 @@ void PaintArea::drawBEPoint(QImage &image, QPoint beginPoint, QPoint endPoint){
     painter.setPen(pen);
     painter.drawText(beginPoint,"("+QString::number(beginPoint.x())+","+QString::number(beginPoint.y())+")");
     painter.drawText(endPoint,"("+QString::number(endPoint.x())+","+QString::number(endPoint.y())+")");
-
-}
-
-void PaintArea::mouseReleaseEvent(QMouseEvent *event)
-{
-   if(event->button() == Qt::LeftButton)   //如果鼠标左键释放
-   {
-       isDrawing=false;
-       endPoint = event->pos();
-       int x=endPoint.x();
-       int y=endPoint.y();
-
-       drawLine(curImage,beginPoint,endPoint,beginColor,endColor);
-   }
-
 }
 
 void PaintArea::setBeginColor(QColor color){

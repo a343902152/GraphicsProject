@@ -29,6 +29,12 @@ private slots:
 
     void on_btn_endcolor_clicked();
 
+    void on_btn_switch_line_clicked();
+
+    void on_btn_switch_polygon_clicked();
+
+    void on_btn_switch_fill_clicked();
+
 private:
     Ui::MainWindow *ui;
     PaintArea *area;

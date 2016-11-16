@@ -26,7 +26,10 @@ MainWindow::MainWindow(QWidget *parent) :
     palette = ui->textBrowser_endcolor->palette();
     palette.setColor(QPalette::Base,area->endColor);
     ui->textBrowser_endcolor->setPalette(palette);
+
+    area->setFocusPolicy(Qt::StrongFocus);
 }
+
 
 void MainWindow::paintEvent(QPaintEvent *){
 }
@@ -62,4 +65,19 @@ void MainWindow::on_btn_endcolor_clicked()
         ui->textBrowser_endcolor->setPalette(palette);
         update();
     }
+}
+
+void MainWindow::on_btn_switch_line_clicked()
+{
+    area->setActionType("drawLine");
+}
+
+void MainWindow::on_btn_switch_polygon_clicked()
+{
+    area->setActionType("drawPolygon");
+}
+
+void MainWindow::on_btn_switch_fill_clicked()
+{
+    area->setActionType("fillPolygon");
 }

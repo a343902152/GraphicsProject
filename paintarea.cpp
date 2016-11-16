@@ -15,7 +15,10 @@ PaintArea::PaintArea()
 
     isDrawing=false;
 
-    actionType="fillPolygon";
+    actionType="drawLine";
+    isPressingShift=false;
+
+    setMouseTracking(true);
 }
 
 /**
@@ -26,14 +29,11 @@ void PaintArea::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
 
-    cout<<"paintenven"<<endl;
-    painter.drawImage(0,0,curImage);
-
-//    if(isDrawing){
-//        painter.drawImage(0,0,tempImage);
-//    }else{
-//        painter.drawImage(0,0,curImage);
-//    }
+    if(isDrawing){
+        painter.drawImage(0,0,tempImage);
+    }else{
+        painter.drawImage(0,0,curImage);
+    }
 }
 
 /**
@@ -54,7 +54,23 @@ void PaintArea::drawPoint(QImage &image,QPoint point,QColor color){
 
     painter.setPen(pen);
     painter.drawPoint(point);
-    repaint();   //进行更新界面显示，可引起窗口重绘事件，重绘窗口
+    update();   //进行更新界面显示，可引起窗口重绘事件，重绘窗口
+}
+
+
+QPoint PaintArea::preDrawLine(QPoint beginPoint,QPoint endPoint){
+    if(!isPressingShift){
+        return endPoint;
+    }
+    double k=-(endPoint.y()-beginPoint.y())*1.0/(endPoint.x()-beginPoint.x());
+    if(fabs(k)<=1){
+        // 画水平线
+        endPoint.setY(beginPoint.y());
+    }else{
+        // 画垂直线
+        endPoint.setX(beginPoint.x());
+    }
+    return endPoint;
 }
 
 /**
@@ -67,13 +83,16 @@ void PaintArea::drawPoint(QImage &image,QPoint point,QColor color){
  */
 void PaintArea::drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,
                         QColor beginColor,QColor endColor){
-    cout<<"drawLine"<<endl;
+
     QColor curColor=beginColor;
     QPoint curPoint;
 
+    endPoint=preDrawLine(beginPoint,endPoint);
+
     // k要乘以-1是因为QT坐标轴中y轴向下为正
     double k=-(endPoint.y()-beginPoint.y())*1.0/(endPoint.x()-beginPoint.x());
-    cout<<k<<endl;
+
+//    cout<<k<<endl;
     double d;
     // 绘制0<K<1
     int colorCount=0;
@@ -202,7 +221,7 @@ void PaintArea::drawLine(QImage &image,QPoint beginPoint,QPoint endPoint,
  */
 void PaintArea::fillPolygon(QImage &image, QPoint beginPoint, QColor newColor){
     QColor backgroundColor=image.pixel(beginPoint);
-    cout<<"fill"<<endl;
+//    cout<<"fill"<<endl;
 
     queue<QPoint> pointQueue;
     if(newColor!=backgroundColor){
@@ -244,6 +263,17 @@ void PaintArea::fillPolygon(QImage &image, QPoint beginPoint, QColor newColor){
     }
 }
 
+
+void PaintArea::keyPressEvent(QKeyEvent *event){
+    if(event->key()==Qt::Key_Shift){
+        isPressingShift=true;
+    }
+}
+
+void PaintArea::keyReleaseEvent(QKeyEvent *event){
+    isPressingShift=false;
+}
+
 /**
  * 每当鼠标点击(不是松开)时会调用
  * @brief PaintArea::mousePressEvent
@@ -255,31 +285,82 @@ void PaintArea::mousePressEvent(QMouseEvent *event)//只区分是拖动还是绘
     {
         isDrawing=true;
         beginPoint = event->pos();   //获得鼠标指针的当前坐标作为起始坐标
-
-        //当前点击位置的横纵坐标
-        int x=beginPoint.x();
-        int y=beginPoint.y();
+        if(actionType=="drawPolygon"){
+            if(!isDrawingPolygon){
+                // 开始绘制多边形，首先清空队列，再把起点push进去
+                while(!ploygonPointList.empty()){
+                    ploygonPointList.pop();
+                }
+                ploygonPointList.push(beginPoint); // beginPoint当作起点
+                ploygonStartPoint=beginPoint;
+                isDrawingPolygon=true;
+            }else{
+                // 正在绘制多边形，那么就在当前位置和上一个点之间drawLine，然后更新点的信息
+                // TODO 添加引力
+                if(isClose(beginPoint,ploygonStartPoint,10)){
+                    if(ploygonPointList.size()>=3){
+                        beginPoint=ploygonStartPoint;
+                        isDrawingPolygon=false;
+                        isDrawing=false;
+                        actionType="fillPolygon";
+                    }
+                }
+                QPoint lastPoint=ploygonPointList.back();
+                drawLine(tempImage,lastPoint,beginPoint,beginColor,endColor);
+                curImage=tempImage;
+                ploygonPointList.push(endPoint);
+            }
+        }
+    }
+}
+/**
+ * 判断两个点之间的距离是否足够接近
+ * 用于引力系统
+ * @brief PaintArea::isClose
+ * @param firstPoint
+ * @param secondPoint
+ * @param threshHold
+ * @return
+ */
+bool PaintArea::isClose(QPoint firstPoint,QPoint secondPoint,double threshHold){
+    int dx=firstPoint.x()-secondPoint.x();
+    int dy=firstPoint.y()-secondPoint.y();
+    double dis2=dx*dx+dy*dy;
+    if(dis2<threshHold*threshHold){
+        return true;
+    }else{
+        return false;
     }
 }
 
 void PaintArea::mouseMoveEvent(QMouseEvent *event)
 {
+//    cout<<"move"<<endl;
+    endPoint = event->pos();  //获得鼠标指针的当前坐标作为终止坐标
     if(event->buttons()&Qt::LeftButton)   //如果鼠标左键按着的同时移动鼠标
     {
-        endPoint = event->pos();  //获得鼠标指针的当前坐标作为终止坐标
-        int x=endPoint.x();
-        int y=endPoint.y();
-
-        if(isDrawing){
-            tempImage=curImage;            
-            if(actionType=="temp"){
-
-            }else{
+        if(isDrawing){      
+            if(actionType=="drawLine"){
+                tempImage=curImage;
                 drawBEPoint(tempImage,beginPoint,endPoint);
                 drawLine(tempImage,beginPoint,endPoint,beginColor,endColor);
             }
         }
     }
+    if(isDrawing){
+        // 绘制多边形不需要鼠标长按
+        if(isDrawingPolygon&&actionType=="drawPolygon"){
+            if(isClose(endPoint,ploygonStartPoint,10)){
+                if(ploygonPointList.size()>=3){
+                    endPoint=ploygonStartPoint;
+                }
+            }
+            tempImage=curImage;
+            QPoint lastPoint=ploygonPointList.back();
+            drawLine(tempImage,lastPoint,endPoint,beginColor,endColor);
+        }
+    }
+
 }
 
 
@@ -289,13 +370,14 @@ void PaintArea::mouseReleaseEvent(QMouseEvent *event)
    {
        isDrawing=false;
        endPoint = event->pos();
-       int x=endPoint.x();
-       int y=endPoint.y();
 
        if(actionType=="fillPolygon"){
            fillPolygon(curImage,beginPoint,endColor);
-       }else{
+       }else if(actionType=="drawLine"){
            drawLine(curImage,beginPoint,endPoint,beginColor,endColor);
+       }
+       if(isDrawingPolygon&&actionType=="drawPolygon"){
+            isDrawing=true;
        }
    }
 
@@ -312,6 +394,8 @@ void PaintArea::mouseReleaseEvent(QMouseEvent *event)
 void PaintArea::drawBEPoint(QImage &image, QPoint beginPoint, QPoint endPoint){
     QPainter painter(&image);
 
+    endPoint=preDrawLine(beginPoint,endPoint);
+
     QPen pen;
     pen.setColor(Qt::red);
     pen.setWidth(5);
@@ -325,6 +409,10 @@ void PaintArea::drawBEPoint(QImage &image, QPoint beginPoint, QPoint endPoint){
     painter.setPen(pen);
     painter.drawText(beginPoint,"("+QString::number(beginPoint.x())+","+QString::number(beginPoint.y())+")");
     painter.drawText(endPoint,"("+QString::number(endPoint.x())+","+QString::number(endPoint.y())+")");
+}
+
+void PaintArea::setActionType(string actionType){
+    this->actionType=actionType;
 }
 
 void PaintArea::setBeginColor(QColor color){
